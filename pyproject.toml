@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "hoyolab-daily-bot"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+packages = [{include = "hoyolab_daily_bot"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+requests = "^2.32.3"
+browser-cookie3 = "^0.19.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
