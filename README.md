@@ -1,7 +1,7 @@
 # Genshin Hoyolab Daily Check-in Bot 📜🖋
 Genshin Impact's Hoyolab Daily Check-in Bot is here! The concept is simple, **run once, run forever**. You only need to run it once, then it will continue to run forever (except if you uninstall it ofc tehe)
 
-![Demo Gif](demo/demo.gif)
+![Demo Gif](docs/demo.gif)
 
 > #### Disclaimer: Only works on Windows (Linux & Mac version coming soon!)
 

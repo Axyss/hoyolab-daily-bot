@@ -20,7 +20,7 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     exec_path = sys.executable
 else:
     app_path = os.path.dirname(os.path.abspath(__file__))
-    exec_path = "run.bat"
+    exec_path = "../run.bat"
 
 # SETUP LOGGING
 log = open(os.path.join(app_path, 'botlog.txt'), 'a+')
