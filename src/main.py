@@ -1,18 +1,24 @@
 import argparse
+import json
+import logging
+import os
+import subprocess
+import sys
 import time
 from datetime import datetime, timedelta
-import os
-import sys
 from random import randint
-import subprocess
-import requests
+
 import browser_cookie3
-import json
+import requests
+
+from utils import create_custom_logger
 
 VER = '2.0 for Windows'
 UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
 
 run_scheduler = True
+
+logger = create_custom_logger("HoyoDailyLogger", logging.INFO)
 
 # INITIALIZE PROGRAM ENVIRONMENT
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -21,9 +27,6 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 else:
     app_path = os.path.dirname(os.path.abspath(__file__))
     exec_path = "../run.bat"
-
-# SETUP LOGGING
-log = open(os.path.join(app_path, 'botlog.txt'), 'a+')
 
 # SETUP CONFIG
 config = None
@@ -50,7 +53,6 @@ except Exception as e:
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
     config_file.write(json.dumps(config))
 
-
 # GET COOKIES
 cookies = None
 try:
@@ -69,11 +71,9 @@ try:
     else:
         raise Exception("ERROR: Browser not defined!")
 except Exception as e:
-    print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
-    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
-    log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
-    log.write('LOGIN ERROR: cookies not found\n')
-    log.close()
+    logger.error("Cookies not found! Please login first to hoyolab once in "
+                 "Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
+    logger.info("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
     time.sleep(5)
     sys.exit(1)
 
@@ -83,11 +83,9 @@ for cookie in cookies:
         found = True
         break
 if not found:
-    print("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
-    print("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
-    log.write("Login information not found! Please login first to hoyolab once in Chrome/Firefox/Opera/Edge/Chromium before using the bot.\n")
-    log.write('LOGIN ERROR: cookies not found\n')
-    log.close()
+    logger.error("Cookies not found! Please login first to hoyolab once in "
+                 "Chrome/Firefox/Opera/Edge/Chromium before using the bot.")
+    logger.info("You only need to login once for a year to https://www.hoyolab.com/genshin/ for this bot to work.")
     time.sleep(5)
     sys.exit(1)
 
@@ -101,8 +99,7 @@ parser.add_argument("-R", "--runascron",
 
 args = parser.parse_args()
 if args.version:
-    print(f"Bot ver. {VER}")
-    log.close()
+    logger.info(f"Bot ver. {VER}")
     sys.exit(0)
 if args.runascron:
     run_scheduler = False
@@ -129,16 +126,11 @@ def getDailyStatus():
                                 headers=headers, params=params, cookies=cookies)
         return response.json()
     except requests.exceptions.ConnectionError as e:
-        print("CONNECTION ERROR: cannot get daily check-in status")
-        print(e)
-        log.write('CONNECTION ERROR: cannot get daily check-in status\n')
-        log.write(repr(e) + '\n')
+        logger.error("CONNECTION ERROR: cannot get daily check-in status")
+        logger.critical(e)
         return None
     except Exception as e:
-        print("ERROR: ")
-        print(e)
-        log.write('UNKNOWN ERROR:\n')
-        log.write(repr(e) + '\n')
+        logger.critical(f'UNKNOWN ERROR: {repr(e)}\n')
         return None
 
 
@@ -171,16 +163,11 @@ def claimReward():
                                  headers=headers, params=params, cookies=cookies, json=data)
         return response.json()
     except requests.exceptions.ConnectionError as e:
-        print("CONNECTION ERROR: cannot claim daily check-in reward")
-        print(e)
-        log.write('CONNECTION ERROR: cannot claim daily check-in reward\n')
-        log.write(repr(e) + '\n')
+        logger.error("CONNECTION ERROR: cannot claim daily check-in reward")
+        logger.critical(repr(e))
         return None
     except Exception as e:
-        print("ERROR: ")
-        print(e)
-        log.write('UNKNOWN ERROR:\n')
-        log.write(repr(e) + '\n')
+        logger.critical(f"UNKNOWN: {repr(e)}")
         return None
 
 
@@ -193,8 +180,8 @@ def configScheduler():
     delta += timedelta(minutes=int(config['DELAY_MINUTE']))
     if (config['RANDOMIZE']):
         delta += timedelta(seconds=randint(0, int(config['RANDOM_RANGE'])))
-    target_hour = int((24 + (delta.total_seconds()//3600)) % 24)
-    target_minute = int((60 + (delta.total_seconds()//60)) % 60)
+    target_hour = int((24 + (delta.total_seconds() // 3600)) % 24)
+    target_minute = int((60 + (delta.total_seconds() // 60)) % 60)
     target_seconds = int(delta.total_seconds() % 60)
     ret_code = subprocess.call((
         f'powershell',
@@ -204,10 +191,7 @@ def configScheduler():
         f'Register-ScheduledTask -Force -TaskName "{config["SCHEDULER_NAME"]}" -Trigger $Time -Action $Action -Settings $Setting -Description "Genshin Hoyolab Daily Check-In Bot {VER}" -RunLevel Highest'
     ), creationflags=0x08000000)
     if ret_code:
-        print("PERMISSION ERROR: please run as administrator to enable task scheduling")
-        log.write(
-            "PERMISSION ERROR: please run as administrator to enable task scheduling\n")
-        log.close()
+        logger.info("PERMISSION ERROR: please run as administrator to enable task scheduling")
         input()
         sys.exit(1)
     else:
@@ -220,17 +204,12 @@ def checkUpdates():
     newVer = res.url.split('/')[-1][1:]
     thisVer = VER.split()[0]
     if newVer > thisVer:
-        print(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
-        log.write(
-            f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
+        logger.info(f'New version (v{newVer}) available!\nPlease go to {UPDATE_CHANNEL} to download the new version.')
         time.sleep(60)
 
 
 # MAIN PROGRAM
 def main():
-    log.write(f'\nSTART BOT: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}\n')
-    print("Connecting to mihoyo...")
     is_done = False
     while not is_done:
         check = isClaimed()
@@ -238,23 +217,22 @@ def main():
             print("Reward not claimed yet. Claiming reward...")
             resp = claimReward()
             if resp:
-                log.write(
+                logger.info(
                     f'Reward claimed at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
                 print("Claiming completed! message:")
                 print(resp['message'])
                 is_done = True
         if check:
-            log.write(
+            logger.info(
                 f'Reward already claimed when checked at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}\n')
             print("Reward has been claimed!")
             is_done = True
         if not is_done:
-            log.write(
+            logger.info(
                 f'Error at {datetime.now().strftime("%d %B, %Y | %H:%M:%S")}, retrying...\n')
             print("There was an error... retrying in a minute")
             time.sleep(60)
     checkUpdates()
-    log.close()
 
 
 if __name__ == "__main__":
