@@ -9,7 +9,7 @@ import requests
 import browser_cookie3
 import json
 
-VER = '1.1.5 for Windows'
+VER = '2.0 for Windows'
 UPDATE_CHANNEL = 'https://github.com/darkGrimoire/hoyolab-daily-bot/releases/latest'
 
 run_scheduler = True
@@ -44,7 +44,7 @@ except Exception as e:
         'RANDOMIZE': False,
         'RANDOM_RANGE': 3600,
         'ACT_ID': 'e202102251931481',
-        'DOMAIN_NAME': '.mihoyo.com',
+        'DOMAIN_NAME': '.hoyoverse.com',
         'SCHEDULER_NAME': 'HoyolabCheckInBot'
     }
     config_file = open(os.path.join(app_path, 'config.json'), 'w')
@@ -79,7 +79,7 @@ except Exception as e:
 
 found = False
 for cookie in cookies:
-    if cookie.name == "cookie_token":
+    if cookie.name == "cookie_token_v2":
         found = True
         break
 if not found:
